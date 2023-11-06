@@ -36,7 +36,7 @@ const handleMove = (move: { from: string, to: string, promotion?: string }) => {
 return (
     <div>
       <Chessboard
-        width={600}
+        width={800}
         position={fen}
         onDrop={({ sourceSquare, targetSquare }) => {
           handleMove({
