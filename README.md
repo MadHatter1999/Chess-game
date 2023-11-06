@@ -1,4 +1,4 @@
-# Getting Started with Create React App
+# Welcome to the beginings of my chess addiction for the comming months
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
