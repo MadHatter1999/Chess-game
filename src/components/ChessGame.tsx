@@ -17,7 +17,7 @@ const handleMove = (move: { from: string, to: string, promotion?: string }) => {
       const legalMove = gameCopy.move({
         from: move.from,
         to: move.to,
-        promotion: move.promotion || "q"
+        promotion: move.promotion || "q" //Default return queen when pawn makes it
       });
 
       if (legalMove) {
