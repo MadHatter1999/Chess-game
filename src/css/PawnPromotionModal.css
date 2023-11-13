@@ -1,0 +1,30 @@
+.promotion-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+}
+
+.promotion-modal {
+background: white;
+padding: 20px;
+border-radius: 10px;
+display: flex;
+justify-content: space-around;
+}
+
+.promotion-button {
+border: none;
+background: none;
+cursor: pointer;
+}
+
+.promotion-piece {
+width: 50px;
+height: 50px;
+}

@@ -1,58 +1,74 @@
 import React, { useState, useEffect } from 'react';
 import Chessboard from 'chessboardjsx';
+import PawnPromotionModal from './PawnPromotionModal';
 const ChessJS = require('chess.js');
 
+interface Move {
+  from: string;
+  to: string;
+  promotion?: string;
+}
+
 const ChessGame: React.FC = () => {
-  // State for the chess game logic
   const [game, setGame] = useState(new ChessJS.Chess());
   const [fen, setFen] = useState("start");
-
-  // State for the dynamic board size
   const [boardSize, setBoardSize] = useState(800);
+  const [showPromotionModal, setShowPromotionModal] = useState(false);
+  const [promotionMove, setPromotionMove] = useState<Move>({ from: '', to: '' });
+  const [promotionColor, setPromotionColor] = useState<'w' | 'b'>('w');
 
-  // Effect to update FEN when the game state changes
   useEffect(() => {
     setFen(game.fen());
   }, [game]);
 
-  // Effect to handle window resize for responsive chessboard
   useEffect(() => {
     const updateBoardSize = () => {
-      // Adjust this calculation to change how the board size responds to window size
       const newSize = Math.min(window.innerWidth, window.innerHeight) * 0.75;
       setBoardSize(newSize);
     };
 
     window.addEventListener('resize', updateBoardSize);
-
-    // Initial resize
     updateBoardSize();
-
-    // Cleanup event listener on component unmount
     return () => window.removeEventListener('resize', updateBoardSize);
   }, []);
 
-  // Function to handle move logic
-  const handleMove = (move: { from: string, to: string, promotion?: string }) => {
+  const handleMove = (move: Move) => {
     try {
       let gameCopy = new ChessJS.Chess(game.fen());
-      const legalMove = gameCopy.move({
-        from: move.from,
-        to: move.to,
-        promotion: move.promotion || "q" // Default to queen promotion
-      });
 
-      if (legalMove) {
-        setGame(gameCopy);
-      } else {
-        console.warn("Illegal move", move);
+      if (gameCopy.get(move.from).type === 'p') {
+        if (move.to[1] === '8') {
+          setPromotionColor('w');
+          setShowPromotionModal(true);
+          setPromotionMove(move);
+          return;
+        } else if (move.to[1] === '1') {
+          setPromotionColor('b');
+          setShowPromotionModal(true);
+          setPromotionMove(move);
+          return;
+        }
       }
+
+      executeMove(move);
     } catch (error) {
       console.error("An error occurred", error);
     }
   };
 
-  // Render the chessboard with responsive width
+  const executeMove = (move: Move) => {
+    if (game.move(move)) {
+      setGame(new ChessJS.Chess(game.fen()));
+    } else {
+      console.warn("Illegal move", move);
+    }
+  };
+
+  const onPromote = (piece: string) => {
+    setShowPromotionModal(false);
+    executeMove({ ...promotionMove, promotion: piece });
+  };
+
   return (
     <div>
       <Chessboard
@@ -65,6 +81,9 @@ const ChessGame: React.FC = () => {
           });
         }}
       />
+      {showPromotionModal && (
+        <PawnPromotionModal onPromote={onPromote} color={promotionColor} />
+      )}
     </div>
   );
 };
