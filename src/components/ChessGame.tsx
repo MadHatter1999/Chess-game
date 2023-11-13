@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import Stockfish from "stockfish.wasm";
+import React, { useState, useEffect, useCallback } from 'react';
 import Chessboard from 'chessboardjsx';
+import styles from '../css/ChessGame.module.css';
 import PawnPromotionModal from './PawnPromotionModal';
 const ChessJS = require('chess.js');
 
@@ -17,6 +17,7 @@ const ChessGame: React.FC = () => {
   const [showPromotionModal, setShowPromotionModal] = useState(false);
   const [promotionMove, setPromotionMove] = useState<Move>({ from: '', to: '' });
   const [promotionColor, setPromotionColor] = useState<'w' | 'b'>('w');
+  const [botColor, setBotColor] = useState<'w' | 'b' | null>(null);
 
   useEffect(() => {
     setFen(game.fen());
@@ -33,28 +34,32 @@ const ChessGame: React.FC = () => {
     return () => window.removeEventListener('resize', updateBoardSize);
   }, []);
 
-  useEffect(() => {
-    // Initialize Stockfish
-    const stockfish = Stockfish();
-    stockfish.onmessage = (event: MessageEvent) => {
-      // Handle messages from Stockfish
-      console.log("Stockfish says:", event.data);
-    };
+  const handleBotMove = useCallback(() => {
+    if (botColor && game.turn() === botColor) {
+      const moves = game.moves({ verbose: true });
+      if (moves.length > 0) {
+        const randomIndex = Math.floor(Math.random() * moves.length);
+        const move = moves[randomIndex];
+        executeMove({ from: move.from, to: move.to, promotion: move.promotion || 'q' });
+      }
+    }
+  }, [game, botColor]);
 
-    return () => {
-      // Clean up Stockfish when component unmounts
-      stockfish.terminate();
-    };
-  }, []);
+  useEffect(() => {
+    const timer = setTimeout(handleBotMove, 500); // Bot moves after a 500ms delay
+    return () => clearTimeout(timer);
+  }, [game.fen(), handleBotMove]);
 
   const handleMove = (move: Move) => {
     try {
       let gameCopy = new ChessJS.Chess(game.fen());
 
-      // Handling pawn promotion
+      // Check if the move is a pawn move
       if (gameCopy.get(move.from).type === 'p') {
-        if (move.to[1] === '8' || move.to[1] === '1') {
-          setPromotionColor(move.to[1] === '8' ? 'w' : 'b');
+        const isWhitePawn = gameCopy.turn() === 'w';
+        const isPromotionMove = ((isWhitePawn && move.to[1] === '8') || (!isWhitePawn && move.to[1] === '1')) ;
+        if (isPromotionMove) {
+          setPromotionColor(gameCopy.turn());
           setShowPromotionModal(true);
           setPromotionMove(move);
           return;
@@ -66,6 +71,7 @@ const ChessGame: React.FC = () => {
       console.error("An error occurred", error);
     }
   };
+
 
   const executeMove = (move: Move) => {
     if (game.move(move)) {
@@ -80,8 +86,17 @@ const ChessGame: React.FC = () => {
     executeMove({ ...promotionMove, promotion: piece });
   };
 
+  const toggleBot = (color: 'w' | 'b' | null) => {
+    setBotColor(color);
+  };
+
   return (
     <div>
+      <div>
+        <button className={styles.button} onClick={() => toggleBot('w')}>Play as Black</button>
+        <button className={styles.button} onClick={() => toggleBot('b')}>Play as White</button>
+        <button className={styles.button} onClick={() => toggleBot(null)}>Disable Bot</button>
+      </div>
       <Chessboard
         width={boardSize}
         position={fen}
