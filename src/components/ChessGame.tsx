@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Stockfish from "stockfish.wasm";
 import Chessboard from 'chessboardjsx';
 import PawnPromotionModal from './PawnPromotionModal';
 const ChessJS = require('chess.js');
@@ -32,18 +33,28 @@ const ChessGame: React.FC = () => {
     return () => window.removeEventListener('resize', updateBoardSize);
   }, []);
 
+  useEffect(() => {
+    // Initialize Stockfish
+    const stockfish = Stockfish();
+    stockfish.onmessage = (event: MessageEvent) => {
+      // Handle messages from Stockfish
+      console.log("Stockfish says:", event.data);
+    };
+
+    return () => {
+      // Clean up Stockfish when component unmounts
+      stockfish.terminate();
+    };
+  }, []);
+
   const handleMove = (move: Move) => {
     try {
       let gameCopy = new ChessJS.Chess(game.fen());
 
+      // Handling pawn promotion
       if (gameCopy.get(move.from).type === 'p') {
-        if (move.to[1] === '8') {
-          setPromotionColor('w');
-          setShowPromotionModal(true);
-          setPromotionMove(move);
-          return;
-        } else if (move.to[1] === '1') {
-          setPromotionColor('b');
+        if (move.to[1] === '8' || move.to[1] === '1') {
+          setPromotionColor(move.to[1] === '8' ? 'w' : 'b');
           setShowPromotionModal(true);
           setPromotionMove(move);
           return;
