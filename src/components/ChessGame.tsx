@@ -105,6 +105,7 @@ const ChessGame: React.FC = () => {
             from: sourceSquare,
             to: targetSquare
           });
+          
         }}
       />
       {showPromotionModal && (
